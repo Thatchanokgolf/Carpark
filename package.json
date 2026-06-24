@@ -1,0 +1,13 @@
+{
+  "name": "carpark-slot-editor",
+  "version": "1.0.0",
+  "description": "Editable carpark slot manager (HTML + Tailwind, Neon DB, Netlify Functions)",
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "db:init": "psql \"$DATABASE_URL\" -f db/schema.sql -f db/seed.sql"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

@@ -1,0 +1,7 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Local dev: `netlify dev` serves index.html and the function at /api/slots
+[dev]
+  publish = "."
