@@ -118,11 +118,25 @@
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+    // Fixed slot ordering: NE, SE, SW, NW, On, OW
+    const PREFIX_ORDER = ['NE', 'SE', 'SW', 'NW', 'ON', 'OW'];
+    function slotRank(code) {
+      const m = String(code ?? '').match(/^\s*([A-Za-z]+)\s*(\d+)/);
+      const prefix = m ? m[1].toUpperCase() : '';
+      const num = m ? parseInt(m[2], 10) : 0;
+      const idx = PREFIX_ORDER.indexOf(prefix);
+      return [idx === -1 ? 99 : idx, num, String(code ?? '')];
+    }
+    function bySlot(a, b) {
+      const ra = slotRank(a.slot_code), rb = slotRank(b.slot_code);
+      return ra[0] - rb[0] || ra[1] - rb[1] || ra[2].localeCompare(rb[2]);
+    }
+
     async function load() {
       try {
         const res = await fetch(API);
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        slots = await res.json();
+        slots = (await res.json()).sort(bySlot);
         render();
       } catch (e) {
         $('content').innerHTML =
@@ -176,9 +190,8 @@
                 <thead class="text-slate-500 border-b border-slate-200">
                   <tr>
                     <th class="text-left font-medium px-4 py-2 w-28">ช่องจอด</th>
-                    <th class="text-left font-medium px-4 py-2">ชื่อ</th>
+                    <th class="text-left font-medium px-4 py-2">ชื่อ / ห้อง</th>
                     <th class="text-left font-medium px-4 py-2 w-32">ทะเบียน</th>
-                    <th class="text-left font-medium px-4 py-2 w-24">ห้อง</th>
                     <th class="text-left font-medium px-4 py-2 w-32">สถานะ</th>
                     <th class="text-left font-medium px-4 py-2">หมายเหตุ</th>
                     <th class="px-4 py-2 w-20"></th>
@@ -197,6 +210,14 @@
         btn.addEventListener('click', () => openModal(slots.find(s => s.id == btn.dataset.edit))));
     }
 
+    // Combined "Name / Room" cell: name, then "ห้อง <room>" if present.
+    function nameRoom(s) {
+      const parts = [];
+      if (s.name) parts.push(esc(s.name));
+      if (s.room) parts.push('ห้อง ' + esc(s.room));
+      return parts.length ? parts.join(' · ') : '<span class="text-slate-300">—</span>';
+    }
+
     function rowHtml(s) {
       const badge = s.status === 'Occupied'
         ? '<span class="inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-medium">ไม่ว่าง</span>'
@@ -204,9 +225,8 @@
       return `
         <tr class="border-b border-slate-100 hover:bg-slate-50">
           <td class="px-4 py-2 font-semibold text-slate-800">${esc(s.slot_code)}</td>
-          <td class="px-4 py-2">${esc(s.name) || '<span class="text-slate-300">—</span>'}</td>
+          <td class="px-4 py-2">${nameRoom(s)}</td>
           <td class="px-4 py-2">${esc(s.plate) || '<span class="text-slate-300">—</span>'}</td>
-          <td class="px-4 py-2">${esc(s.room) || '<span class="text-slate-300">—</span>'}</td>
           <td class="px-4 py-2">${badge}</td>
           <td class="px-4 py-2 text-slate-500">${esc(s.note) || ''}</td>
           <td class="px-4 py-2 text-right">
