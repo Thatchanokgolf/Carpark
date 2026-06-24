@@ -8,6 +8,7 @@ node_modules/
 
 # Netlify
 .netlify/
+deno.lock
 
 # OS / editor
 .DS_Store
